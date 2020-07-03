@@ -162,7 +162,7 @@ def train_encoder(args):
     c_indices = c_indices - 1
     finalData2 = finalData[:, :, c_indices, :]
 
-    filename = 'index_array_labelled_COBRE2.csv'
+    filename = 'index_array_labelled_COBRE.csv'
     df = pd.read_csv(filename, header=None)
     index_array = df.values
     index_array = torch.from_numpy(index_array).long()

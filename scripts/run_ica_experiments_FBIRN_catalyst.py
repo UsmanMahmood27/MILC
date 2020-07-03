@@ -130,17 +130,6 @@ def train_encoder(args):
     n_good_comp = 53
     finalData2 = np.zeros((subjects, samples_per_subject, n_good_comp, sample_y))
 
- #   for p in range(subjects):
- #       filename = '../TC_label_FBIRN/FBIRN_ica_br' + str(p + 1) + '.csv'
- #       if p % 30 == 0:
- #           print(filename)
- #       df = pd.read_csv(filename, header=None)
- #       d = df.values
- #       data[p, :, :] = d[:, :tc]
-
-    # data2 = data.reshape(subjects, sample_x * tc)
-    # hf.create_dataset('FBIRN_dataset', data=data2)
-    # hf.close()
     hf = h5py.File('../FBIRN_AllData.h5', 'r')
     data2 = hf.get('FBIRN_dataset')
     data2 = np.array(data2)
