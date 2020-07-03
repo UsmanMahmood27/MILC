@@ -161,19 +161,19 @@ def train_encoder(args):
 
     # hf.create_dataset('OASIS3_dataset', data=data2)
     # hf.close()
-    hf = h5py.File('../OASIS3_AllData.h5', 'r')
+    hf = h5py.File('../Data/OASIS3_AllData.h5', 'r')
     data2 = hf.get('OASIS3_dataset')
     data2 = np.array(data2)
     data2 = data2.reshape(subjects, sample_x, tc)
     data = data2
 
     # Get Training indices for oasis and convert them to tensor. this is to have same training samples everytime.
-    hf_hc = h5py.File('../OASIS3_HC_TrainingIndex.h5', 'r')
+    hf_hc = h5py.File('../IndicesAndLabels/OASIS3_HC_TrainingIndex.h5', 'r')
     HC_TrainingIndex = hf_hc.get('HC_TrainingIndex')
     HC_TrainingIndex = np.array(HC_TrainingIndex)
     HC_TrainingIndex = torch.from_numpy(HC_TrainingIndex)
 
-    hf_sz = h5py.File('../OASIS3_SZ_TrainingIndex.h5', 'r')
+    hf_sz = h5py.File('../IndicesAndLabels/OASIS3_SZ_TrainingIndex.h5', 'r')
     SZ_TrainingIndex = hf_sz.get('SZ_TrainingIndex')
     SZ_TrainingIndex = np.array(SZ_TrainingIndex)
     SZ_TrainingIndex = torch.from_numpy(SZ_TrainingIndex)
@@ -186,7 +186,7 @@ def train_encoder(args):
             finalData[i, j, :, :] = data[i, :, (j * window_shift):(j * window_shift) + sample_y]
 
     print(finalData.shape)
-    filename = 'correct_indices_GSP.csv'
+    filename = '../IndicesAndLabels/correct_indices_GSP.csv'
     print(filename)
     df = pd.read_csv(filename, header=None)
     c_indices = df.values
@@ -195,13 +195,13 @@ def train_encoder(args):
     c_indices = c_indices - 1
     finalData2 = finalData[:, :, c_indices, :]
 
-    filename = 'index_array_labelled_OASIS3.csv'
+    filename = '../IndicesAndLabels/index_array_labelled_OASIS3.csv'
     df = pd.read_csv(filename, header=None)
     index_array = df.values
     index_array = torch.from_numpy(index_array).long()
     index_array = index_array.view(subjects)
 
-    filename = 'labels_OASIS3.csv'
+    filename = '../IndicesAndLabels/labels_OASIS3.csv'
     df = pd.read_csv(filename, header=None)
     all_labels = df.values
     all_labels = torch.from_numpy(all_labels).int()

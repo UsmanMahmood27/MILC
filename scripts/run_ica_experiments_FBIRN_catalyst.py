@@ -130,7 +130,7 @@ def train_encoder(args):
     n_good_comp = 53
     finalData2 = np.zeros((subjects, samples_per_subject, n_good_comp, sample_y))
 
-    hf = h5py.File('../FBIRN_AllData.h5', 'r')
+    hf = h5py.File('../Data/FBIRN_AllData.h5', 'r')
     data2 = hf.get('FBIRN_dataset')
     data2 = np.array(data2)
     data2 = data2.reshape(subjects, sample_x, tc)
@@ -153,7 +153,7 @@ def train_encoder(args):
 
 
     print(finalData.shape)
-    filename = 'correct_indices_GSP.csv'
+    filename = '../IndicesAndLabels/correct_indices_GSP.csv'
     #print(filename)
     df = pd.read_csv(filename, header=None)
     c_indices = df.values
@@ -162,13 +162,13 @@ def train_encoder(args):
     c_indices = c_indices - 1
     finalData2 = finalData[:, :, c_indices.long(), :]
 
-    filename = 'index_array_labelled_FBIRN.csv'
+    filename = '../IndicesAndLabels/index_array_labelled_FBIRN.csv'
     df = pd.read_csv(filename, header=None)
     index_array = df.values
     index_array = torch.from_numpy(index_array).long()
     index_array = index_array.view(subjects)
 
-    filename = 'labels_FBIRN.csv'
+    filename = '../IndicesAndLabels/labels_FBIRN.csv'
     df = pd.read_csv(filename, header=None)
     all_labels = df.values
     all_labels = torch.from_numpy(all_labels).int()

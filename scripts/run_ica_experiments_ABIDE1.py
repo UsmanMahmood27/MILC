@@ -136,18 +136,18 @@ def train_encoder(args):
     # hf.create_dataset('ABIDE1_dataset', data=data2)
     # hf.close()
     # img = nib.load('../fMRI_Data/SM1.nii')
-    hf = h5py.File('../ABIDE1_AllData.h5', 'r')
+    hf = h5py.File('../Data/ABIDE1_AllData.h5', 'r')
     data = hf.get('ABIDE1_dataset')
     data = np.array(data)
     data = data.reshape(subjects, sample_x, tc)
 
     # Get Training indices for ABIDE and convert them to tensor. this is to have same training samples everytime.
-    hf_hc = h5py.File('../ABIDE1_HC_TrainingIndex.h5', 'r')
+    hf_hc = h5py.File('../IndicesAndLabels/ABIDE1_HC_TrainingIndex.h5', 'r')
     HC_TrainingIndex = hf_hc.get('HC_TrainingIndex')
     HC_TrainingIndex = np.array(HC_TrainingIndex)
     HC_TrainingIndex = torch.from_numpy(HC_TrainingIndex)
 
-    hf_sz = h5py.File('../ABIDE1_SZ_TrainingIndex.h5', 'r')
+    hf_sz = h5py.File('../IndicesAndLabels/ABIDE1_SZ_TrainingIndex.h5', 'r')
     SZ_TrainingIndex = hf_sz.get('SZ_TrainingIndex')
     SZ_TrainingIndex = np.array(SZ_TrainingIndex)
     SZ_TrainingIndex = torch.from_numpy(SZ_TrainingIndex)
@@ -158,7 +158,7 @@ def train_encoder(args):
             finalData[i, j, :, :] = data[i, :, (j * window_shift):(j * window_shift) + sample_y]
 
     print(finalData.shape)
-    filename = 'correct_indices_GSP.csv'
+    filename = '../IndicesAndLabels/correct_indices_GSP.csv'
     print(filename)
     df = pd.read_csv(filename, header=None)
     c_indices = df.values
@@ -167,13 +167,13 @@ def train_encoder(args):
     c_indices = c_indices - 1
     finalData2 = finalData[:, :, c_indices, :]
 
-    filename = 'index_array_labelled_ABIDE1.csv'
+    filename = '../IndicesAndLabels/index_array_labelled_ABIDE1.csv'
     df = pd.read_csv(filename, header=None)
     index_array = df.values
     index_array = torch.from_numpy(index_array).long()
     index_array = index_array.view(subjects)
 
-    filename = 'labels_ABIDE1.csv'
+    filename = '../IndicesAndLabels/labels_ABIDE1.csv'
     df = pd.read_csv(filename, header=None)
     all_labels = df.values
     all_labels = torch.from_numpy(all_labels).int()
