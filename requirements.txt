@@ -1,0 +1,10 @@
+h5py
+pandas
+torch
+numpy
+gym[atari]
+matplotlib
+Pybullet
+opencv-python
+scikit-learn
+catalyst
