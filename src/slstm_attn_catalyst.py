@@ -6,25 +6,12 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
-from torch.utils.data import RandomSampler, BatchSampler
 from .utils import calculate_accuracy, Cutout, calculate_accuracy_by_labels, calculate_FP, calculate_FP_Max
 from .trainer import Trainer
-from src.utils import EarlyStopping
 from torchvision import transforms
 from torch.utils.data import DataLoader, TensorDataset
-import matplotlib.pylab as plt
-import matplotlib.pyplot as pl
-import torchvision.transforms.functional as TF
-import torch.nn.utils.rnn as tn
-from torch.autograd import Variable
-from sklearn.metrics import accuracy_score
 from sklearn.metrics import roc_auc_score
-import ipdb
-import csv
-import time
 from catalyst import dl
-from catalyst.dl import utils
-from catalyst.utils import metrics
 from catalyst.dl.callbacks import AccuracyCallback, AUCCallback, F1ScoreCallback, EarlyStoppingCallback
 from torch.nn.parallel import DistributedDataParallel as DDP
 import torch.multiprocessing as mp
@@ -65,23 +52,16 @@ class CustomRunner(dl.Runner):
 
         epoch_loss += loss.detach().item()
         epoch_accuracy += accuracy.detach().item()
+        self.log_results( epoch_loss, epoch_accuracy, epoch_roc, prefix=mode)
 
-        steps += 1
-
-        self.log_results( epoch_loss / steps, epoch_accuracy / steps, epoch_roc / steps, prefix=mode)
-
-        if mode == 'test':
-            self.test_accuracy = epoch_accuracy / steps
-            self.test_auc = epoch_roc / steps
-            self.test_loss = epoch_loss / steps
-        return epoch_accuracy / steps, epoch_roc / steps, epoch_loss / steps
+        return epoch_accuracy, epoch_roc, epoch_loss
 
 
     def _handle_batch(self, batch):
 
         sx, targets = batch
         targets=targets.long()
-        if self.state.is_train_loader:
+        if self.is_train_loader:
             mode = 'train'
         else:
             mode = 'eval'
@@ -93,18 +73,18 @@ class CustomRunner(dl.Runner):
 
         loss = loss.mean()
 
-        self.state.output = {"logits": logits}
+        self.output = {"logits": logits}
         y_onehot = torch.FloatTensor(sx.shape[0], 2)
         y_onehot.zero_()
         y_onehot[np.arange(sx.shape[0]), targets] = 1
-        self.state.input = {"features": sx, "targets": targets, "targets_one_hot": y_onehot}
-        self.state.batch_metrics.update(
+        self.input = {"features": sx, "targets": targets, "targets_one_hot": y_onehot}
+        self.batch_metrics.update(
             {"loss": loss}
         )
-        if self.state.is_train_loader:
+        if self.is_train_loader:
             loss.backward()
-            self.state.optimizer.step()
-            self.state.optimizer.zero_grad()
+            self.optimizer.step()
+            self.optimizer.zero_grad()
 
     def acc_and_auc(self, logits, mode, targets):
 
@@ -183,14 +163,11 @@ class LSTMTrainer(Trainer):
         self.val_eps = ""
         self.tst_eps = ""
         self.patience = self.config["patience"]
-        self.dropout = nn.Dropout(0.65).to(device)
         self.epochs = config['epochs']
         self.batch_size = config['batch_size']
         self.sample_number = config['sample_number']
         self.path = config['path']
         self.oldpath = config['oldpath']
-        self.fig_path = config['fig_path']
-        self.p_path = config['p_path']
         self.PT = config['pre_training']
         self.device = device
         self.gain = config['gain']
@@ -204,7 +181,6 @@ class LSTMTrainer(Trainer):
         self.gtrial = gtrial
         self.exp = config['exp']
         self.cv = crossv
-        self.dropout = nn.Dropout(0.65)
 
         if self.exp in ['UFPT', 'NPT']:
             self.optimizer = torch.optim.Adam(self.model.parameters(), lr=config['lr'], eps=1e-5)
@@ -214,9 +190,6 @@ class LSTMTrainer(Trainer):
             else:
                 self.optimizer = torch.optim.Adam(list(self.model.decoder.parameters()) + list(self.model.attn.parameters())
                                                        + list(self.model.lstm.parameters()), lr=config['lr'], eps=1e-5)
-
-
-        self.transform = transforms.Compose([Cutout(n_holes=1, length=80)])
 
 
     def datasets_fn(self, num_features: int):

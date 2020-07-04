@@ -6,8 +6,6 @@ import subprocess
 import torch
 import numpy as np
 from sklearn.metrics import f1_score as compute_f1_score
-from a2c_ppo_acktr.envs import make_vec_envs
-from a2c_ppo_acktr.utils import get_vec_normalize
 from collections import defaultdict
 
 # methods that need encoder trained before
@@ -24,7 +22,7 @@ def get_argparser():
                         choices=pre_train_encoder_methods,
                         help='Pre-Training Method to Use (default: Basic )')
     parser.add_argument("--fMRI-twoD", action='store_true', default=False)
-    parser.add_argument("--deep", action='store_true', default=True)
+    parser.add_argument("--deep", action='store_true', default=False)
     parser.add_argument('--path', type=str,
                         default='/data/mialab/users/umahmood1/STDIMs/baselines/pytorch-a2c-ppo-acktr-gail/STDIM_fMRI/scripts/wandb',
                         help='Path to store the encoder (default: )')
@@ -38,7 +36,7 @@ def get_argparser():
                         default='/data/mialab/users/umahmood1/STDIMs/baselines/pytorch-a2c-ppo-acktr-gail/STDIM_fMRI/scripts/wandb',
                         help='Path to store the encoder (default: )')
     parser.add_argument('--exp', type=str,
-                        default='NPT',
+                        default='UFPT',
                         help='the exp to run (default:FPT )')
     parser.add_argument('--gain', type=float,
                         default=0.1,

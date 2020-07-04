@@ -49,7 +49,7 @@ class combinedModel(nn.Module):
                 nn.init.xavier_normal_(param, gain=self.gain)
 
     def loadModels(self):
-        if self.PT in ['milc-fMRI', 'variable-attention', 'two-loss-milc']:
+        if self.PT in ['milc', 'variable-attention', 'two-loss-milc']:
             if self.exp in ['UFPT', 'FPT']:
                 print('in ufpt and fpt')
                 model_dict = torch.load(os.path.join(self.oldpath, 'lstm' + '.pt'), map_location=self.device)
