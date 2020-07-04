@@ -13,7 +13,7 @@ import pandas as pd
 import datetime
 from src.encoder_slstm_attn_catalyst import LSTMTrainer
 from src.lstm_attn import subjLSTM
-
+from src.All_Architecture_Pre_Training import combinedModel
 
 def train_encoder(args):
     currentDT = datetime.datetime.now()
@@ -116,6 +116,7 @@ def train_encoder(args):
     initial_n_channels = 1
     print('ID = ', args.script_ID)
 
+
     observation_shape = finalData2.shape
     if args.encoder_type == "Nature":
         encoder = NatureCNN(observation_shape[2], args)
@@ -131,8 +132,9 @@ def train_encoder(args):
     config = {}
     config.update(vars(args))
     config['obs_space'] = observation_shape  # weird hack
+    complete_model = combinedModel(encoder, lstm_model, gain=0.1, device=device, oldpath=args.oldpath)
     if args.method == "sub-enc-lstm":
-        trainer = LSTMTrainer(encoder, lstm_model, config, device=device, wandb="wandb")
+        trainer = LSTMTrainer(complete_model, lstm_model, config, device=device, wandb="wandb")
     else:
         assert False, "method {} has no trainer".format(args.method)
 
