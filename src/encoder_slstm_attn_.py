@@ -12,17 +12,7 @@ from .utils import calculate_accuracy, Cutout, calculate_accuracy_by_labels, cal
 from .trainer import Trainer
 from src.utils import EarlyStopping
 from torchvision import transforms
-import matplotlib.pylab as plt
-import matplotlib.pyplot as pl
-import torchvision.transforms.functional as TF
-import torch.nn.utils.rnn as tn
-from torch.autograd import Variable
-from sklearn.metrics import accuracy_score
-from scipy import stats
-from sklearn.metrics import roc_auc_score
-import ipdb
 import csv
-from numpy import linalg as LA
 
 
 class Classifier(nn.Module):

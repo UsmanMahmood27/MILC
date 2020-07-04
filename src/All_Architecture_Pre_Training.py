@@ -75,7 +75,6 @@ class combinedModel(nn.Module):
         return attn_applied
 
     def acc_and_auc(self, sig, mode, targets):
-
         values, indices = sig.max(1)
         roc = 0.
         accuracy = calculate_accuracy_by_labels(indices, targets)
@@ -84,7 +83,6 @@ class combinedModel(nn.Module):
     def forward(self, sx, mode='train'):
         loss = 0.
         accuracy = 0.
-        #print('sx shape', sx.shape)
         inputs = [self.encoder(x, fmaps=False) for x in sx]
         outputs = self.lstm(inputs, mode)
         logits = self.get_attention(outputs)
@@ -98,35 +96,18 @@ class combinedModel(nn.Module):
         for loop in range(ssx - 1):
             random_matrix = np.concatenate((random_matrix, torch.randperm(sy)), axis=0)
         random_matrix = np.reshape(random_matrix, (ssx, sy))
-        # loss3, accuracy3 = self.after_lstm_loss(outputs, logits, sx, sy, v, random_matrix, mode, targets)
-        # loss4, accuracy4 = self.window_attention_loss(windows_tensor, logits, mode, targets, sy, v, random_matrix)
-        # print('lstm device Y start  ' + torch.cuda.get_device_name(device=self.device) + ' ', (torch.cuda.memory_allocated(device=self.device) / (1024*1024)))
-        # print('encoder device Y start  ' + torch.cuda.get_device_name(device=self.device_encoder) + ' ', (torch.cuda.memory_allocated(device=self.device_encoder) / (1024*1024)))
         for y in range(sy):
-            # print("y= ", y)
-            # for x in range(sx):
             y_index = random_matrix[:, y]
             positive = inputs_tensor[v, y_index, :].clone()
             positive = self.classifier1(positive)
-            # logits = self.classifier2(logits)
-            # positive_norms = LA.norm(positive.detach().cpu().numpy(), ord=1, axis=1).reshape(sx, 1)
-            # logits_norms = LA.norm(logits.detach().cpu().numpy(), ord=1, axis=1).reshape(1, sx)
-            # norms = torch.from_numpy(positive_norms * logits_norms)
             mlogits = torch.matmul(positive, logits.t())
-            # mlogits = mlogits / ((self.temp * norms).to(self.device))
             mlogits = mlogits.to(self.device)
             step_loss = F.cross_entropy(mlogits, targets)
             sig = torch.softmax(mlogits.detach(), dim=1)
             step_acc, step_roc = self.acc_and_auc(sig, mode, targets)
             loss += step_loss
             accuracy += step_acc
-            # del step_loss
-            # del step_acc
-            # del positive
-            # del mlogits
-        # print('lstm device Y end  ' + torch.cuda.get_device_name(device=self.device) + ' ', (torch.cuda.memory_allocated(device=self.device) / (1024*1024)))
-        # print('encoder device Y end  ' + torch.cuda.get_device_name(device=self.device_encoder) + ' ', (torch.cuda.memory_allocated(device=self.device_encoder) / (1024*1024)))
+
         loss = loss / (sy)
         accuracy = accuracy / (sy)
-        #print('loss', loss)
         return loss, accuracy

@@ -11,7 +11,7 @@ from src.utils import get_argparser
 from src.encoders_ICA import NatureCNN, NatureOneCNN
 import pandas as pd
 import datetime
-from src.encoder_slstm_attn_ import LSTMTrainer
+from src.encoder_slstm_attn_catalyst import LSTMTrainer
 from src.lstm_attn import subjLSTM
 
 
@@ -32,63 +32,24 @@ def train_encoder(args):
     else:
         device = torch.device("cpu")
 
-    # tr_eps, val_eps = get_episodes(steps=args.probe_steps,
-    #                              env_name=args.env_name,
-    #                              seed=args.seed,
-    #                              num_processes=args.num_processes,
-    #                              num_frame_stack=args.num_frame_stack,
-    #                              downsample=not args.no_downsample,
-    #                              color=args.color,
-    #                              entropy_threshold=args.entropy_threshold,
-    #                              collect_mode=args.probe_collect_mode,
-    #                              train_mode="train_encoder",
-    #                              checkpoint_index=args.checkpoint_index,
-    #                              min_episode_length=args.batch_size)
 
-    # for Simulated TS
-    # data = np.zeros((50, 10, 20000))
-    # finalData = np.zeros((50, 1000, 10, 20))
-    #
-    # for p in range(50):
-    #     filename = '../TimeSeries/TSDataCSV' + str(p) + '.csv'
-    #     # filename = '../TimeSeries/HCP_ica_br1.csv'
-    #     print(filename)
-    #     df = pd.read_csv(filename)
-    #     # print('size is',df.shape)
-    #     # print(df[1,:])
-    #     data[p, :, :] = df
-    #
-    # for i in range(50):
-    #     for j in range(1000):
-    #         finalData[i, j, :, :] = data[i, :, j * 20:j * 20 + 20]
-    #
-    # print(finalData.shape)
-    #
-    # tr_eps = finalData[:, 0:700, :, :]
-    # val_eps = finalData[:, 700:900, :, :]
-    # test_eps = finalData[:, 900:1000, :, :]
+
 
     # For ICA TC Data
     data = np.zeros((823, 100, 1040))
-    # modifieddata = np.zeros((823, 100, 1100))
 
     finalData2 = np.zeros((823, 52, 53, 20))
 
     for p in range(823):
-        # print(p)
-        filename = '../TC/HCP_ica_br' + str(p + 1) + '.csv'
-        # filename = '../TimeSeries/HCP_ica_br1.csv'
+        filename = '../Data/TC/HCP_ica_br' + str(p + 1) + '.csv'
         if p%20 == 0:
             print(filename)
         df = pd.read_csv(filename, header=None)
 
-        # print('size is',df.shape)
-        # print(df[1,:])
-        # print('shape is', df.shape)
+
         d = df.values
         data[p, :, :] = d[:, 0:1040]
-        # modifieddata[p, :, :]= data[p, :, 0:1100]
-    # print(data.shape)
+
 
 
     if args.fMRI_twoD:
@@ -104,13 +65,13 @@ def train_encoder(args):
         finalData = torch.from_numpy(finalData).float()
 
     print(finalData.shape)
-    filename = 'index_array.csv'
+    filename = '../IndicesAndLabels/index_array.csv'
     df = pd.read_csv(filename, header=None)
     index_array = df.values
     index_array = torch.from_numpy(index_array).int()
     index_array = index_array.view(823)
 
-    filename = 'correct_indices_HCP.csv'
+    filename = '../IndicesAndLabels/correct_indices_HCP.csv'
     print(filename)
     df = pd.read_csv(filename, header=None)
     c_indices = df.values
@@ -120,16 +81,9 @@ def train_encoder(args):
     finalData2 = finalData[:, :, c_indices.long(), :]
     print(c_indices)
 
-    # index_array = torch.randperm(823)
-    # index_array = torch.randperm(823)
-    # tr_index = index_array[0:500]
-    # val_index = index_array[0:500]
-    # test_index = index_array[0:500]
 
     ID = args.script_ID - 1
     ID = ID * 123
-    # val_indexs = ID-1;
-    # val_indexe = ID+200
 
     test_indexs = ID
     test_indexe = ID + 123
@@ -150,13 +104,6 @@ def train_encoder(args):
     val_eps = finalData2[500:700, :, :, :]
     test_eps = finalData2[test_index.long(), :, :, :]
 
-    #tr_eps = torch.from_numpy(tr_eps).float()
-    #val_eps = torch.from_numpy(val_eps).float()
-    #test_eps = torch.from_numpy(test_eps).float()
-    #input_data = torch.rand(20, 10, 1, 160, 210)
-    # tr_eps = torch.rand(20, 10, 1, 160, 210)
-    # val_eps = torch.rand(20, 10, 1, 160, 210)
-    # observation_shape = tr_eps[0][0].shape
 
     tr_eps.to(device)
     val_eps.to(device)
@@ -180,13 +127,9 @@ def train_encoder(args):
 
     lstm_model = subjLSTM(device, args.feature_size, args.lstm_size, num_layers=args.lstm_layers,
                           freeze_embeddings=True, gain=0.1)
-    encoder.to(device)
-    lstm_model.to(device)
-    torch.set_num_threads(1)
 
     config = {}
     config.update(vars(args))
-    # print("trainershape", os.path.join(wandb.run.dir, config['env_name'] + '.pt'))
     config['obs_space'] = observation_shape  # weird hack
     if args.method == "sub-enc-lstm":
         trainer = LSTMTrainer(encoder, lstm_model, config, device=device, wandb="wandb")
@@ -194,7 +137,7 @@ def train_encoder(args):
         assert False, "method {} has no trainer".format(args.method)
 
     # print("valshape", val_eps.shape)
-    trainer.train(tr_eps, val_eps, test_eps)
+    trainer.pre_train(tr_eps, val_eps, test_eps)
 
     # return encoder
 

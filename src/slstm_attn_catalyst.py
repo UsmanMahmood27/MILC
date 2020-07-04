@@ -17,13 +17,7 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 import torch.multiprocessing as mp
 import torch.distributed as dist
 
-class Classifier(nn.Module):
-    def __init__(self, num_inputs1, num_inputs2):
-        super().__init__()
-        self.network = nn.Bilinear(num_inputs1, num_inputs2, 1)
 
-    def forward(self, x1, x2):
-        return self.network(x1, x2)
 
 
 class CustomRunner(dl.Runner):
