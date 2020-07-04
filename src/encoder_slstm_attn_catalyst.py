@@ -111,8 +111,8 @@ class LSTMTrainer(Trainer):
         ]
 
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, mode='min')
-        train_dataset = TensorDataset(self.tr_eps, self.tr_labels)
-        val_dataset = TensorDataset(self.val_eps, self.val_labels)
+        train_dataset = TensorDataset(self.tr_eps, torch.arange(self.tr_eps.shape[0]))
+        val_dataset = TensorDataset(self.val_eps, torch.arange(self.val_eps.shape[0]))
         runner = CustomRunner()
         v_bs = self.val_eps.shape[0]
         loaders = {
