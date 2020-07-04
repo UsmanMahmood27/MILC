@@ -31,9 +31,9 @@ class CustomRunner(dl.Runner):
 
         loss, accuracy = self.model(sx, mode)
         loss = loss.mean()
-        if mode == 'train' or mode == 'eval':
-            loss, CE_loss, E_loss, lstm_loss = self.add_regularization(loss)
-        loss = loss.mean()
+        #if mode == 'train' or mode == 'eval':
+        #    loss, CE_loss, E_loss, lstm_loss = self.add_regularization(loss)
+        #    loss = loss.mean()
 
 
         self.batch_metrics.update(

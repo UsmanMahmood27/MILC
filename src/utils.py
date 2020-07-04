@@ -23,6 +23,7 @@ def get_argparser():
                         help='Pre-Training Method to Use (default: Basic )')
     parser.add_argument("--fMRI-twoD", action='store_true', default=False)
     parser.add_argument("--deep", action='store_true', default=False)
+    parser.add_argument("--CompleteArch", action='store_true', default=True)
     parser.add_argument('--path', type=str,
                         default='/data/mialab/users/umahmood1/STDIMs/baselines/pytorch-a2c-ppo-acktr-gail/STDIM_fMRI/scripts/wandb',
                         help='Path to store the encoder (default: )')
@@ -65,7 +66,7 @@ def get_argparser():
     #                         help='Number of steps to train probes (default: 15000 )')
     parser.add_argument('--num-processes', type=int, default=8,
                         help='Number of parallel environments to collect samples from (default: 8)')
-    parser.add_argument('--method', type=str, default='sub-enc-lstm',
+    parser.add_argument('--method', type=str, default='sub-lstm',
                         choices=train_encoder_methods + probe_only_methods,
                         help='Method to use for training representations (default: infonce-stdim)')
     parser.add_argument('--linear', action='store_true', default=True,

@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
-from .utils import calculate_accuracy, Cutout, calculate_accuracy_by_labels, calculate_FP, calculate_FP_Max
+from .utils import calculate_accuracy, calculate_accuracy_by_labels, calculate_FP, calculate_FP_Max
 from .trainer import Trainer
 from torchvision import transforms
 from torch.utils.data import DataLoader, TensorDataset
@@ -174,6 +174,7 @@ class LSTMTrainer(Trainer):
         self.trials = trial
         self.gtrial = gtrial
         self.exp = config['exp']
+        self.complete_arc = config['CompleteArch']
         self.cv = crossv
 
         if self.exp in ['UFPT', 'NPT']:
@@ -215,6 +216,13 @@ class LSTMTrainer(Trainer):
         }
 
         model = self.model
+        if self.complete_arc == True:
+            if self.PT in ['milc', 'variable-attention', 'two-loss-milc']:
+                if self.exp in ['UFPT', 'FPT']:
+                    model_dict = torch.load(os.path.join(self.oldpath, 'best_full' + '.pth'), map_location=self.device)
+                    model_dict = model_dict["model_state_dict"]
+                    print("Complete ARch")
+                    self.model.load_state_dict(model_dict)
         num_features=2
         # model training
         train_loader_param = {"batch_size": 64,

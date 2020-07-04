@@ -9,7 +9,7 @@ import torch.nn.functional as F
 class combinedModel(nn.Module):
     """Bidirectional LSTM for classifying subjects."""
 
-    def __init__(self, encoder, lstm, gain=0.1, PT="", exp="UFPT", device="cuda", oldpath=""):
+    def __init__(self, encoder, lstm, gain=0.1, PT="", exp="UFPT", device="cuda", oldpath="", complete_arc=False):
 
         super().__init__()
         self.encoder = encoder
@@ -19,6 +19,7 @@ class combinedModel(nn.Module):
         self.exp = exp
         self.device = device
         self.oldpath=oldpath
+        self.complete_arc = complete_arc
         self.attn = nn.Sequential(
             nn.Linear(2 * self.lstm.hidden_dim, 128),
             nn.ReLU(),
@@ -38,7 +39,8 @@ class combinedModel(nn.Module):
 
 
         self.init_weight()
-        self.loadModels()
+        if self.complete_arc == False:
+            self.loadModels()
 
     def init_weight(self):
         for name, param in self.decoder.named_parameters():
