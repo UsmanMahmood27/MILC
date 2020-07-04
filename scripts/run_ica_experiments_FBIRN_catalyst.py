@@ -226,9 +226,9 @@ def train_encoder(args):
                                           freeze_embeddings=True, gain=current_gain)
 
                     model_dict = torch.load(path, map_location=device)  # with good components
-
-                if args.exp in ['UFPT', 'FPT']:
-                    encoder.load_state_dict(model_dict)
+                if args.CompleteArch == False:
+                    if args.exp in ['UFPT', 'FPT']:
+                        encoder.load_state_dict(model_dict)
 
                 complete_model = combinedModel(encoder,lstm_model, gain=current_gain, PT=args.pre_training, exp=args.exp, device=device, oldpath=args.oldpath )
                 config = {}
