@@ -117,7 +117,7 @@ class LSTMTrainer(Trainer):
         v_bs = self.val_eps.shape[0]
         loaders = {
             "train": DataLoader(train_dataset, batch_size=self.batch_size, num_workers=1, shuffle=True),
-            "valid": DataLoader(val_dataset, batch_size=v_bs, num_workers=1, shuffle=True),
+            "valid": DataLoader(val_dataset, batch_size=self.batch_size, num_workers=1, shuffle=True),
         }
 
         model = self.model

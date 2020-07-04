@@ -8,9 +8,8 @@ import torch.nn.functional as F
 import copy
 import numpy as np
 from torch.utils.data import RandomSampler, BatchSampler
-from .utils import calculate_accuracy, Cutout, calculate_accuracy_by_labels, calculate_FP, calculate_FP_Max
+from .utils import calculate_accuracy, calculate_accuracy_by_labels, calculate_FP, calculate_FP_Max
 from .trainer import Trainer
-from src.utils import EarlyStopping
 from torchvision import transforms
 import csv
 
