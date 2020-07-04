@@ -104,7 +104,7 @@ class LSTMTrainer(Trainer):
 
 
 
-    def train(self, tr_eps, val_eps, tst_eps):
+    def train(self):
         # TODO: Make it work for all modes, right now only it defaults to pcl.
         callbacks = [
             EarlyStoppingCallback(patience=15, metric='loss', minimize=True, min_delta=0),
