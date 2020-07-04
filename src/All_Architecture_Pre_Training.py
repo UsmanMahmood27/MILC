@@ -10,14 +10,12 @@ from .utils import calculate_accuracy_by_labels
 class combinedModel(nn.Module):
     """Bidirectional LSTM for classifying subjects."""
 
-    def __init__(self, encoder, lstm, gain=0.1, PT="", exp="UFPT", device="cuda", oldpath=""):
+    def __init__(self, encoder, lstm, gain=0.1, device="cuda", oldpath=""):
 
         super().__init__()
         self.encoder = encoder
         self.lstm = lstm
         self.gain = gain
-        self.PT = PT
-        self.exp = exp
         self.device = device
         self.oldpath=oldpath
         self.attn = nn.Sequential(
