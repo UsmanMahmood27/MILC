@@ -1,6 +1,6 @@
 # Whole MILC: generalizing learned dynamics across tasks, datasets, and populations
 
-Usman Mahmood*, Mahfuz M. Rahman*, Alex Fedorov*, Zengin Fu, Vince D. Calhoun, Sergey M. Plis
+Usman Mahmood*, Mahfuz M. Rahman*, Alex Fedorov*, Noah Lewis, Zengin Fu, Vince D. Calhoun, Sergey M. Plis
 
 
 
