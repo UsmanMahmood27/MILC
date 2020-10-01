@@ -46,7 +46,7 @@ def get_argparser():
     parser.add_argument('--temperature', type=float, default=0.25,
                         help='Temperature for division of norms in pre training')
     parser.add_argument('--script-ID', type=int, default=1,
-                        help='Task Array ID')
+                        help='Task Array ID, chooses the required subjects per sample and gain value')
     parser.add_argument('--teststart-ID', type=int, default=1,
                         help='Task Set Start Index ID')
     parser.add_argument('--job-ID', type=int, default=1,
