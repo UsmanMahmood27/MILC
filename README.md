@@ -3,7 +3,7 @@
 https://arxiv.org/abs/2007.16041
 
 
-Usman Mahmood*, Mahfuz M. Rahman*, Alex Fedorov*, Noah Lewis, Zengin Fu, Vince D. Calhoun, Sergey M. Plis
+Usman Mahmood, Mahfuz M. Rahman, Alex Fedorov, Noah Lewis, Zengin Fu, Vince D. Calhoun, Sergey M. Plis
 
 
 
