@@ -136,7 +136,7 @@ class CustomRunner(dl.Runner):
         loss = loss  + lstm_loss + attn_loss
         return loss, CE_loss, E_loss, lstm_loss
 
-    def log_results(self, epoch_loss, epoch_test_accuracy,epoch_roc, prefix=""):
+    def log_results(self, epoch_loss, epoch_test_accuracy, epoch_roc, prefix=""):
         print(
             "{}  Epoch Loss: {}, Epoch Accuracy: {}, roc: {},  {}".format(
                 prefix.capitalize(),
@@ -174,13 +174,13 @@ class LSTMTrainer(Trainer):
         self.trials = trial
         self.gtrial = gtrial
         self.exp = config['exp']
-        self.complete_arc = config['CompleteArch']
+        self.complete_arc = config['complete_arc']
         self.cv = crossv
 
         if self.exp in ['UFPT', 'NPT']:
             self.optimizer = torch.optim.Adam(self.model.parameters(), lr=config['lr'], eps=1e-5)
         else:
-            if self.PT in ['milc-fMRI', 'variable-attention', 'two-loss-milc']:
+            if self.PT in ['milc', 'two-loss-milc']:
                 self.optimizer = torch.optim.Adam(list(self.model.decoder.parameters()),lr=config['lr'], eps=1e-5)
             else:
                 self.optimizer = torch.optim.Adam(list(self.model.decoder.parameters()) + list(self.model.attn.parameters())
@@ -217,23 +217,23 @@ class LSTMTrainer(Trainer):
 
         model = self.model
         if self.complete_arc == True:
-            if self.PT in ['milc', 'variable-attention', 'two-loss-milc']:
+            if self.PT in ['milc', 'two-loss-milc']:
                 if self.exp in ['UFPT', 'FPT']:
                     model_dict = torch.load(os.path.join(self.oldpath, 'best_full' + '.pth'), map_location=self.device)
                     model_dict = model_dict["model_state_dict"]
-                    print("Complete ARch")
+                    print("Complete Arch Loaded")
                     self.model.load_state_dict(model_dict)
-        num_features=2
+        # num_features=2
         # model training
-        train_loader_param = {"batch_size": 64,
-                              "shuffle":True,
-                              }
-        val_loader_param = {"batch_size": 32,
-                              "shuffle": True,
-                              }
+        # train_loader_param = {"batch_size": 64,
+        #                       "shuffle":True,
+        #                       }
+        # val_loader_param = {"batch_size": 32,
+        #                       "shuffle": True,
+        #                       }
 
-        loaders_params = {"train" : train_loader_param,
-                          "valid": val_loader_param}
+        # loaders_params = {"train" : train_loader_param,
+        #                   "valid": val_loader_param}
 
         #datasets = {
         #               "batch_size": 64,
