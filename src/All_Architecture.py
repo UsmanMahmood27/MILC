@@ -54,13 +54,20 @@ class combinedModel(nn.Module):
         if self.PT in ['milc', 'variable-attention', 'two-loss-milc']:
             if self.exp in ['UFPT', 'FPT']:
                 print('in ufpt and fpt')
-                model_dict = torch.load(os.path.join(self.oldpath, 'lstm' + '.pt'), map_location=self.device)
-                self.lstm.load_state_dict(model_dict)
-                #self.model.lstm.to(self.device)
+                if not self.complete_arc:
+                    model_dict = torch.load(os.path.join(self.oldpath, 'encoder' + '.pt'), map_location=self.device)
+                    self.encoder.load_state_dict(model_dict)
 
-                model_dict = torch.load(os.path.join(self.oldpath, 'attn' + '.pt'), map_location=self.device)
-                self.attn.load_state_dict(model_dict)
-                #self.model.attn.to(self.device)
+                    model_dict = torch.load(os.path.join(self.oldpath, 'lstm' + '.pt'), map_location=self.device)
+                    self.lstm.load_state_dict(model_dict)
+                    #self.model.lstm.to(self.device)
+
+                    model_dict = torch.load(os.path.join(self.oldpath, 'attn' + '.pt'), map_location=self.device)
+                    self.attn.load_state_dict(model_dict)
+                    #self.model.attn.to(self.device)
+                else:
+                    model_dict = torch.load(os.path.join(self.oldpath, 'best_full' + '.pth'), map_location=self.device)
+                    self.load_state_dict(model_dict)
 
     def get_attention(self, outputs):
         #print('in attention')
