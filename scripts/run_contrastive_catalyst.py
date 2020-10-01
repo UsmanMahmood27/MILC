@@ -135,6 +135,8 @@ def train_encoder(args):
     complete_model = combinedModel(encoder, lstm_model, gain=0.1, device=device, oldpath=args.oldpath)
     if args.method == "sub-enc-lstm":
         trainer = LSTMTrainer(complete_model, lstm_model, config, device=device, wandb="wandb")
+    elif args.method == "sub-lstm":
+        print("Change method to sub-enc-lstm")
     else:
         assert False, "method {} has no trainer".format(args.method)
 

@@ -225,6 +225,8 @@ def train_encoder(args):
         if args.method == "sub-lstm":
             trainer = LSTMTrainer(complete_model, config, device=device, tr_labels=tr_labels,
                                   val_labels=val_labels, test_labels=test_labels, wandb="wandb", trial=str(trial))
+        elif args.method == "sub-enc-lstm":
+            print("Change method to sub-lstm")
         else:
             assert False, "method {} has no trainer".format(args.method)
 
