@@ -1,5 +1,8 @@
 # Whole MILC: generalizing learned dynamics across tasks, datasets, and populations
 
+https://arxiv.org/abs/2007.16041
+
+
 Usman Mahmood*, Mahfuz M. Rahman*, Alex Fedorov*, Noah Lewis, Zengin Fu, Vince D. Calhoun, Sergey M. Plis
 
 
@@ -28,8 +31,8 @@ pip install -r requirements.txt
 ```
 
 ### MILC downstream:
-Here's a sample example using pre-trained encoder for FBIRN classification: 
+Here's a sample example using pre-trained model for COBRE classification using 40 subjects per class for training: 
 
 ```bash
-python -m scripts.run_probe --method infonce-stdim --env-name {env_name}
+python -m scripts.run_ica_experiments_COBRE_catalyst -- pre-training milc --script-ID 3 --exp UFPT --method sub-lstm 
 ```
