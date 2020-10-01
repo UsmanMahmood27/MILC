@@ -32,7 +32,7 @@ def train_encoder(args):
     # ID = args.script_ID + 3
     ID = args.script_ID - 1
     JobID = args.job_ID
-    ID = 2
+    # ID = 2
     print('ID = ' + str(ID))
     print('exp = ' + args.exp)
     print('pretraining = ' + args.pre_training)
