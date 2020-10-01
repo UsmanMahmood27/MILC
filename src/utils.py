@@ -6,13 +6,14 @@ import subprocess
 import torch
 import numpy as np
 from sklearn.metrics import f1_score as compute_f1_score
+#from a2c_ppo_acktr.envs import make_vec_envs
+#from a2c_ppo_acktr.utils import get_vec_normalize
 from collections import defaultdict
 
 # methods that need encoder trained before
-train_encoder_methods = ['cpc', 'spatial-appo', 'vae', "naff", "infonce-stdim", "global-infonce-stdim",
-                         "global-local-infonce-stdim", "dim", "sub-enc-lstm", "sub-lstm"]
+train_encoder_methods = ["sub-enc-lstm", "sub-lstm"]
 probe_only_methods = ["supervised", "random-cnn", "majority", "pretrained-rl-agent"]
-pre_train_encoder_methods = ['basic', 'milc', 'two-loss-milc', "variable-attention", "AE"]
+pre_train_encoder_methods = ['basic', 'milc']
 
 
 def get_argparser():
@@ -23,7 +24,7 @@ def get_argparser():
                         help='Pre-Training Method to Use (default: Basic )')
     parser.add_argument("--fMRI-twoD", action='store_true', default=False)
     parser.add_argument("--deep", action='store_true', default=False)
-    parser.add_argument("--CompleteArch", action='store_true', default=True)
+    parser.add_argument("--complete_arc", action='store_true', default=True)
     parser.add_argument('--path', type=str,
                         default='/data/mialab/users/umahmood1/STDIMs/baselines/pytorch-a2c-ppo-acktr-gail/STDIM_fMRI/scripts/wandb',
                         help='Path to store the encoder (default: )')
@@ -68,7 +69,7 @@ def get_argparser():
                         help='Number of parallel environments to collect samples from (default: 8)')
     parser.add_argument('--method', type=str, default='sub-lstm',
                         choices=train_encoder_methods + probe_only_methods,
-                        help='Method to use for training representations (default: infonce-stdim)')
+                        help='Method to use for training representations (default: sub-lstm)')
     parser.add_argument('--linear', action='store_true', default=True,
                         help='Whether to use a linear classifier')
     parser.add_argument('--use_multiple_predictors', action='store_true', default=False,
@@ -84,7 +85,7 @@ def get_argparser():
                         help='CUDA device index')
     parser.add_argument('--seed', type=int, default=42,
                         help='Random seed to use')
-    parser.add_argument('--encoder-type', type=str, default="NatureOne", choices=["Impala", "Nature", "NatureOne"],
+    parser.add_argument('--encoder-type', type=str, default="NatureOne", choices=["Nature", "NatureOne"],
                         help='Encoder type (Impala or Nature or NatureOne)')
     parser.add_argument('--feature-size', type=int, default=256,
                         help='Size of features')
@@ -220,3 +221,190 @@ def calculate_multiclass_accuracy(preds, labels):
 
 
 
+class appendabledict(defaultdict):
+    def __init__(self, type_=list, *args, **kwargs):
+        self.type_ = type_
+        super().__init__(type_, *args, **kwargs)
+
+    #     def map_(self, func):
+    #         for k, v in self.items():
+    #             self.__setitem__(k, func(v))
+
+    def subslice(self, slice_):
+        """indexes every value in the dict according to a specified slice
+
+        Parameters
+        ----------
+        slice : int or slice type
+            An indexing slice , e.g., ``slice(2, 20, 2)`` or ``2``.
+
+
+        Returns
+        -------
+        sliced_dict : dict (not appendabledict type!)
+            A dictionary with each value from this object's dictionary, but the value is sliced according to slice_
+            e.g. if this dictionary has {a:[1,2,3,4], b:[5,6,7,8]}, then self.subslice(2) returns {a:3,b:7}
+                 self.subslice(slice(1,3)) returns {a:[2,3], b:[6,7]}
+
+         """
+        sliced_dict = {}
+        for k, v in self.items():
+            sliced_dict[k] = v[slice_]
+        return sliced_dict
+
+    def append_update(self, other_dict):
+        """appends current dict's values with values from other_dict
+
+        Parameters
+        ----------
+        other_dict : dict
+            A dictionary that you want to append to this dictionary
+
+
+        Returns
+        -------
+        Nothing. The side effect is this dict's values change
+
+         """
+        for k, v in other_dict.items():
+            self.__getitem__(k).append(v)
+
+
+# Thanks Bjarten! (https://github.com/Bjarten/early-stopping-pytorch)
+class EarlyStopping(object):
+    """Early stops the training if validation loss doesn't improve after a given patience."""
+
+    def __init__(self, encoder_backup, lstm_backup, patience=7, verbose=False, wandb=None, name="", path="", trial=""):
+        """
+        Args:
+            patience (int): How long to wait after last time validation loss improved.
+                            Default: 7
+            verbose (bool): If True, prints a message for each validation loss improvement.
+                            Default: False
+        """
+        self.patience = patience
+        self.verbose = verbose
+        self.counter = 0
+        self.best_score = None
+        self.early_stop = False
+        self.val_acc_max = 0.
+        self.val_min_loss = 0.
+        self.name = name
+        self.wandb = wandb
+        self.path = path
+        self.trial = trial
+        self.encoder_backup = ""
+        self.lstm_backup = ""
+        self.attn_backup = ""
+        self.cone_backup = ""
+        self.key_backup = ""
+        self.value_backup = ""
+        self.query_backup = ""
+        self.mha_backup= ""
+        self.threshold = 0.0001
+        self.a = 0
+
+    def __call__(self, val_loss, val_auc, model, lstm, attn, cone, save=0, key="", value="", query="", mha=""):
+
+        if save == 0:
+            score = val_loss
+
+            if self.best_score is None:
+                self.best_score = score
+                self.save_checkpoint(val_loss, val_auc, model, lstm, attn, cone, save, key, value, query, mha)
+            elif self.best_score - score <= self.threshold:
+                self.counter += 1
+                if self.counter >= 10:
+                    print(f'EarlyStopping for {self.name} counter: {self.counter} out of {self.patience}')
+                if self.counter >= self.patience:
+                    self.early_stop = True
+                    print(f'{self.name} has stopped')
+
+            else:
+                self.best_score = score
+                self.save_checkpoint(val_loss, val_auc, model, lstm, attn, cone, save, key, value, query, mha)
+                self.counter = 0
+        else:
+            self.save_checkpoint(val_loss, val_auc, model, lstm, attn, cone, save, key, value, query, mha)
+
+    def save_checkpoint(self, val_loss, val_auc, model, lstm, attn, cone, save, key, value, query, mha):
+        '''Saves model when validation loss decrease.'''
+        if self.verbose:
+            print(
+                f'Validation accuracy increased for {self.name}  ({self.val_acc_max:.6f} --> {val_loss:.6f}).  Saving model ...')
+
+        if save == 1:
+            # self.a = 0
+            torch.save(self.encoder_backup, os.path.join(self.path, self.name + self.trial +'.pt'))
+            torch.save(self.lstm_backup, os.path.join(self.path, 'lstm' + self.trial + '.pt'))
+            torch.save(self.attn_backup, os.path.join(self.path, 'attn' + self.trial + '.pt'))
+            torch.save(self.cone_backup, os.path.join(self.path, 'cone' + self.trial + '.pt'))
+            #torch.save(self.key_backup, os.path.join(self.path, 'key' + self.trial + '.pt'))
+            #torch.save(self.value_backup, os.path.join(self.path, 'value' + self.trial + '.pt'))
+            #torch.save(self.query_backup, os.path.join(self.path, 'query' + self.trial + '.pt'))
+            #torch.save(self.mha_backup, os.path.join(self.path, 'mha' + self.trial + '.pt'))
+        else:
+            encoder_state = model.state_dict()
+            lstm_state = lstm.state_dict()
+            attn_state = attn.state_dict()
+            cone_state = cone.state_dict()
+            #key_state = key.state_dict()
+            #value_state = value.state_dict()
+            #query_state = query.state_dict()
+            #mha_state = mha.state_dict()
+
+            self.lstm_backup = copy.deepcopy(lstm_state)
+            self.encoder_backup = copy.deepcopy(encoder_state)
+            self.attn_backup = copy.deepcopy(attn_state)
+            self.cone_backup = copy.deepcopy(cone_state)
+            #self.key_backup = copy.deepcopy(key_state)
+            #self.value_backup = copy.deepcopy(value_state)
+            #self.query_backup = copy.deepcopy(query_state)
+            #self.mha_backup = copy.deepcopy(mha_state)
+
+            self.val_min_loss = val_loss
+            self.val_acc_max = val_auc
+
+
+
+
+
+class Cutout(object):
+    """Randomly mask out one or more patches from an image.
+    Args:
+        n_holes (int): Number of patches to cut out of each image.
+        length (int): The length (in pixels) of each square patch.
+    """
+
+    def __init__(self, n_holes, length):
+        self.n_holes = n_holes
+        self.length = length
+
+    def __call__(self, img):
+        """
+        Args:
+            img (Tensor): Tensor image of size (C, H, W).
+        Returns:
+            Tensor: Image with n_holes of dimension length x length cut out of it.
+        """
+        h = img.size(1)
+        w = img.size(2)
+
+        mask = np.ones((h, w), np.float32)
+
+        for n in range(self.n_holes):
+            y = np.random.randint(h)
+            x = np.random.randint(w)
+
+            y1 = np.clip(y - self.length // 2, 0, h)
+            y2 = np.clip(y + self.length // 2, 0, h)
+            x1 = np.clip(x - self.length // 2, 0, w)
+            x2 = np.clip(x + self.length // 2, 0, w)
+
+            mask[y1: y2, x1: x2] = 0.
+
+        mask = torch.from_numpy(mask)
+        mask = mask.expand_as(img)
+        img = img * mask
+
+        return img
