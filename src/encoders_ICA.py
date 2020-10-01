@@ -91,7 +91,6 @@ class NatureOneCNN(nn.Module):
         self.hidden_size = self.feature_size
         self.downsample = not args.no_downsample
         self.input_channels = input_channels
-        self.fully_connected = False
         self.twoD = args.fMRI_twoD
         self.end_with_relu = args.end_with_relu
         self.args = args
@@ -115,40 +114,7 @@ class NatureOneCNN(nn.Module):
                 init_(nn.Linear(self.final_conv_size, self.feature_size)),
                 #nn.ReLU()
             )
-        elif self.fully_connected:
-            self.final_conv_size = 200 * 12
-            self.final_conv_shape = (200, 12)
-            self.main = nn.Sequential(
-                Flatten(),
-                init_(nn.Linear(1060, 1064)),
-                nn.ReLU(),
-                init_(nn.Linear(1064, 512)),
-                nn.ReLU(),
-                init_(nn.Linear(512, 256)),
-                nn.ReLU(),
-                init_(nn.Linear(256, self.feature_size)),
-                init_(nn.Linear(200, 128)),
-                nn.ReLU(),
-                # nn.ReLU()
-            )
-        elif self.twoD:
-            self.final_conv_size = 32 * 25
-            self.final_conv_shape = (32, 25)
-            self.main = nn.Sequential(
-                init_(nn.Conv1d(input_channels, 16, 8, stride=1)),
-                nn.ReLU(),
-                init_(nn.Conv1d(16, 32, 8, stride=1)),
-                nn.ReLU(),
-                init_(nn.Conv1d(32, 32, 8, stride=1)),
-                nn.ReLU(),
-                init_(nn.Conv1d(32, 32, 8, stride=1)),
-                nn.ReLU(),
-                Flatten(),
-                init_(nn.Linear(self.final_conv_size, self.feature_size)),
-                init_(nn.Conv1d(200, 128, 3, stride=1)),
-                nn.ReLU(),
-                # nn.ReLU()
-            )
+
         else:
             self.final_conv_size = 200 * 12
             self.final_conv_shape = (200, 12)
@@ -169,7 +135,6 @@ class NatureOneCNN(nn.Module):
 
     def forward(self, inputs, fmaps=False, five=False):
         f5 = self.main[:6](inputs)
-        # f7 = self.main[6:8](f5)
         out = self.main[6:8](f5)
         f5 = self.main[8:](f5)
 
