@@ -36,3 +36,4 @@ Here's a sample example using pre-trained model for COBRE classification using 4
 ```bash
 python -m scripts.run_ica_experiments_COBRE_catalyst --pre-training milc --script-ID 3 --exp UFPT --method sub-lstm 
 ```
+Or run the jupyter notebook file with the same name. Requires installation of jupyter.
