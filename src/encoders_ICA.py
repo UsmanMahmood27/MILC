@@ -7,10 +7,12 @@ class Flatten(nn.Module):
     def forward(self, x):
         return x.view(x.size(0), -1)
 
+
 class CheckSize(nn.Module):
     def forward(self, x):
-        print("final size is",x.size())
+        print("final size is", x.size())
         return x
+
 
 class NatureCNN(nn.Module):
     def init(self, module, weight_init, bias_init, gain=1):
@@ -26,10 +28,12 @@ class NatureCNN(nn.Module):
         self.input_channels = 1
         self.end_with_relu = args.end_with_relu
         self.args = args
-        init_ = lambda m: self.init(m,
-                               nn.init.orthogonal_,
-                               lambda x: nn.init.constant_(x, 0),
-                               nn.init.calculate_gain('relu'))
+        init_ = lambda m: self.init(
+            m,
+            nn.init.orthogonal_,
+            lambda x: nn.init.constant_(x, 0),
+            nn.init.calculate_gain("relu"),
+        )
         self.flatten = Flatten()
 
         if self.downsample:
@@ -44,7 +48,7 @@ class NatureCNN(nn.Module):
                 nn.ReLU(),
                 Flatten(),
                 init_(nn.Linear(self.final_conv_size, self.feature_size)),
-                #nn.ReLU()
+                # nn.ReLU()
             )
         else:
             self.final_conv_size = 64 * 41 * 8
@@ -60,7 +64,7 @@ class NatureCNN(nn.Module):
                 nn.ReLU(),
                 Flatten(),
                 init_(nn.Linear(self.final_conv_size, self.feature_size)),
-                #nn.ReLU()
+                # nn.ReLU()
             )
         self.train()
 
@@ -69,13 +73,15 @@ class NatureCNN(nn.Module):
         f7 = self.main[6:8](f5)
         out = self.main[8:](f7)
         if self.end_with_relu:
-            assert self.args.method != "vae", "can't end with relu and use vae!"
+            assert (
+                self.args.method != "vae"
+            ), "can't end with relu and use vae!"
             out = F.relu(out)
         if fmaps:
             return {
-                'f5': f5.permute(0, 2, 3, 1),
-                'f7': f7.permute(0, 2, 3, 1),
-                'out': out
+                "f5": f5.permute(0, 2, 3, 1),
+                "f7": f7.permute(0, 2, 3, 1),
+                "out": out,
             }
         return out
 
@@ -85,6 +91,7 @@ class NatureOneCNN(nn.Module):
         weight_init(module.weight.data, gain=gain)
         bias_init(module.bias.data)
         return module
+
     def __init__(self, input_channels, args):
         super().__init__()
         self.feature_size = args.feature_size
@@ -94,10 +101,12 @@ class NatureOneCNN(nn.Module):
         self.twoD = args.fMRI_twoD
         self.end_with_relu = args.end_with_relu
         self.args = args
-        init_ = lambda m: self.init(m,
-                               nn.init.orthogonal_,
-                               lambda x: nn.init.constant_(x, 0),
-                               nn.init.calculate_gain('relu'))
+        init_ = lambda m: self.init(
+            m,
+            nn.init.orthogonal_,
+            lambda x: nn.init.constant_(x, 0),
+            nn.init.calculate_gain("relu"),
+        )
         self.flatten = Flatten()
 
         if self.downsample:
@@ -112,7 +121,7 @@ class NatureOneCNN(nn.Module):
                 nn.ReLU(),
                 Flatten(),
                 init_(nn.Linear(self.final_conv_size, self.feature_size)),
-                #nn.ReLU()
+                # nn.ReLU()
             )
 
         else:
@@ -139,14 +148,16 @@ class NatureOneCNN(nn.Module):
         f5 = self.main[8:](f5)
 
         if self.end_with_relu:
-            assert self.args.method != "vae", "can't end with relu and use vae!"
+            assert (
+                self.args.method != "vae"
+            ), "can't end with relu and use vae!"
             out = F.relu(out)
         if five:
             return f5.permute(0, 2, 1)
         if fmaps:
             return {
-                'f5': f5.permute(0, 2, 1),
+                "f5": f5.permute(0, 2, 1),
                 # 'f7': f7.permute(0, 2, 1),
-                'out': out
+                "out": out,
             }
         return out

@@ -1,11 +1,14 @@
-import torch
-import torch.nn as nn
-import torch.nn.utils.rnn as tn
-from torch.autograd import Variable
 import os
-import torch.nn.functional as F
+
 import numpy as np
+import torch
+from torch.autograd import Variable
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.nn.utils.rnn as tn
+
 from .utils import calculate_accuracy_by_labels
+
 
 class combinedModel(nn.Module):
     """Bidirectional LSTM for classifying subjects."""
@@ -17,43 +20,39 @@ class combinedModel(nn.Module):
         self.lstm = lstm
         self.gain = gain
         self.device = device
-        self.oldpath=oldpath
+        self.oldpath = oldpath
         self.attn = nn.Sequential(
             nn.Linear(2 * self.lstm.hidden_dim, 128),
             nn.ReLU(),
-            nn.Linear(128, 1)
+            nn.Linear(128, 1),
         )
 
         self.decoder = nn.Sequential(
             nn.Linear(self.lstm.hidden_dim, self.lstm.hidden_dim),
             nn.ReLU(),
-            nn.Linear(self.lstm.hidden_dim, 2)
-
+            nn.Linear(self.lstm.hidden_dim, 2),
         )
 
         self.classifier1 = nn.Sequential(
             nn.Linear(self.encoder.feature_size, self.lstm.hidden_dim),
-
         )
-
 
         self.init_weight()
 
     def init_weight(self):
         for name, param in self.attn.named_parameters():
-            if 'weight' in name:
+            if "weight" in name:
                 nn.init.xavier_normal_(param, gain=self.gain)
 
         for name, param in self.classifier1.named_parameters():
-            if 'weight' in name:
+            if "weight" in name:
                 nn.init.xavier_normal_(param, gain=self.gain)
 
-
     def get_attention(self, outputs):
-        #print('in attention')
+        # print('in attention')
         weights_list = []
         for X in outputs:
-            #t=time.time()
+            # t=time.time()
             result = [torch.cat((X[i], X[-1]), 0) for i in range(X.shape[0])]
             result = torch.stack(result)
             result_tensor = self.attn(result)
@@ -65,22 +64,22 @@ class combinedModel(nn.Module):
 
         normalized_weights = F.softmax(weights, dim=1)
 
-
         attn_applied = torch.bmm(normalized_weights.unsqueeze(1), outputs)
 
         attn_applied = attn_applied.squeeze()
-        #print("attention decoder ", time.time() - t)
+        # print("attention decoder ", time.time() - t)
         return attn_applied
 
     def acc_and_auc(self, sig, mode, targets):
         values, indices = sig.max(1)
-        roc = 0.
+        roc = 0.0
         accuracy = calculate_accuracy_by_labels(indices, targets)
 
         return accuracy, roc
-    def forward(self, sx, mode='train'):
-        loss = 0.
-        accuracy = 0.
+
+    def forward(self, sx, mode="train"):
+        loss = 0.0
+        accuracy = 0.0
         inputs = [self.encoder(x, fmaps=False) for x in sx]
         outputs = self.lstm(inputs, mode)
         logits = self.get_attention(outputs)
@@ -92,7 +91,9 @@ class combinedModel(nn.Module):
         v = np.arange(0, ssx)
         random_matrix = torch.randperm(sy)
         for loop in range(ssx - 1):
-            random_matrix = np.concatenate((random_matrix, torch.randperm(sy)), axis=0)
+            random_matrix = np.concatenate(
+                (random_matrix, torch.randperm(sy)), axis=0
+            )
         random_matrix = np.reshape(random_matrix, (ssx, sy))
         for y in range(sy):
             y_index = random_matrix[:, y]

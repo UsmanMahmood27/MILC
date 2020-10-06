@@ -1,8 +1,0 @@
-README.md
-setup.py
-MILC/__init__.py
-MILC.egg-info/PKG-INFO
-MILC.egg-info/SOURCES.txt
-MILC.egg-info/dependency_links.txt
-MILC.egg-info/requires.txt
-MILC.egg-info/top_level.txt

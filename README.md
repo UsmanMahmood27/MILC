@@ -2,17 +2,13 @@
 
 https://arxiv.org/abs/2007.16041
 
-
 Usman Mahmood, Mahfuz M. Rahman, Alex Fedorov, Noah Lewis, Zengin Fu, Vince D. Calhoun, Sergey M. Plis
 
 
-
-
-
 #### Dependencies:
-* PyTorch
-* Scikit-Learn
-* Catalyst
+* [PyTorch](https://github.com/pytorch/pytorch)
+* [Scikit-Learn](https://github.com/scikit-learn/scikit-learn)
+* [Catalyst](https://github.com/catalyst-team/catalyst)
 
 ```bash
 conda install pytorch torchvision -c pytorch
