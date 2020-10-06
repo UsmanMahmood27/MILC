@@ -1,35 +1,42 @@
-'''
+"""
 Autoencoder
-'''
+"""
 
+from a2c_ppo_acktr.utils import init
 import torch
-import torchvision as tv
-import torchvision.transforms as transforms
+from torch.autograd import Variable
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.autograd import Variable
+import torchvision as tv
+import torchvision.transforms as transforms
 from torchvision.utils import save_image
-from a2c_ppo_acktr.utils import init
+
 
 class Flatten(nn.Module):
     def forward(self, x):
         return x.view(x.size(0), -1)
 
+
 class CheckSize(nn.Module):
     def forward(self, x):
-        print("Size is",x.size())
+        print("Size is", x.size())
         return x
+
 
 class MyAutoEncoderNew(nn.Module):
     def __init__(self, input_channels, args):
         super().__init__()
 
-        init_ = lambda m: init(m,
-                               nn.init.orthogonal_,
-                               lambda x: nn.init.constant_(x, 0),
-                               nn.init.calculate_gain('relu'))
+        init_ = lambda m: init(
+            m,
+            nn.init.orthogonal_,
+            lambda x: nn.init.constant_(x, 0),
+            nn.init.calculate_gain("relu"),
+        )
 
-        self.conv1 = init_(nn.Conv1d(input_channels, 16, 3, stride=1, padding=1))
+        self.conv1 = init_(
+            nn.Conv1d(input_channels, 16, 3, stride=1, padding=1)
+        )
         self.conv2 = init_(nn.Conv1d(16, 8, 3, stride=1, padding=1))
         self.conv3 = init_(nn.Conv1d(8, 10, 3, stride=1, padding=1))
 
@@ -41,7 +48,9 @@ class MyAutoEncoderNew(nn.Module):
 
         self.trans1 = init_(nn.ConvTranspose1d(10, 8, 3, stride=1, padding=1))
         self.trans2 = init_(nn.ConvTranspose1d(8, 16, 3, stride=1, padding=1))
-        self.trans3 = init_(nn.ConvTranspose1d(16, input_channels, 3, stride=1, padding=1))
+        self.trans3 = init_(
+            nn.ConvTranspose1d(16, input_channels, 3, stride=1, padding=1)
+        )
 
         self.flatten = Flatten()
         self.check = CheckSize()
@@ -71,10 +80,7 @@ class MyAutoEncoderNew(nn.Module):
         dec_out = self.relu(x)
 
         if pretraining:
-            return {
-                'enc': enc_out,
-                'dec': dec_out
-            }
+            return {"enc": enc_out, "dec": dec_out}
         return code
 
 
@@ -82,10 +88,12 @@ class MyAutoEncoder(nn.Module):
     def __init__(self, input_channels, args):
         super().__init__()
 
-        init_ = lambda m: init(m,
-                               nn.init.orthogonal_,
-                               lambda x: nn.init.constant_(x, 0),
-                               nn.init.calculate_gain('relu'))
+        init_ = lambda m: init(
+            m,
+            nn.init.orthogonal_,
+            lambda x: nn.init.constant_(x, 0),
+            nn.init.calculate_gain("relu"),
+        )
 
         self.conv1 = init_(nn.Conv1d(input_channels, 32, 4, stride=1))
         self.conv2 = init_(nn.Conv1d(32, 64, 4, stride=1))
@@ -101,15 +109,16 @@ class MyAutoEncoder(nn.Module):
         self.trans1 = init_(nn.ConvTranspose1d(64, 128, 2, stride=1))
         self.trans2 = init_(nn.ConvTranspose1d(128, 64, 3, stride=1))
         self.trans3 = init_(nn.ConvTranspose1d(64, 32, 4, stride=1))
-        self.trans4 = init_(nn.ConvTranspose1d(32, input_channels, 4, stride=1))
+        self.trans4 = init_(
+            nn.ConvTranspose1d(32, input_channels, 4, stride=1)
+        )
 
-        self.lin1 = init_(nn.Linear(64*11, 256))
-        self.lin2 = init_(nn.Linear(256, 64*11))
+        self.lin1 = init_(nn.Linear(64 * 11, 256))
+        self.lin2 = init_(nn.Linear(256, 64 * 11))
 
         self.flatten = Flatten()
         self.check = CheckSize()
         self.train()
-
 
     def forward(self, inputs, pretraining=False):
         x = self.conv1(inputs)
@@ -136,11 +145,9 @@ class MyAutoEncoder(nn.Module):
         # self.check(x)
 
         if pretraining:
-            return {
-                'enc': enc_out,
-                'dec': dec_out
-            }
+            return {"enc": enc_out, "dec": dec_out}
         return enc_out
+
 
 class LinearAutoenc(nn.Module):
     def __init__(self):
@@ -149,16 +156,16 @@ class LinearAutoenc(nn.Module):
             nn.Linear(10 * 20, 256),
             nn.ReLU(True),
             nn.Linear(256, 64),
-            nn.ReLU(True))
+            nn.ReLU(True),
+        )
         self.decoder = nn.Sequential(
             nn.Linear(64, 256),
             nn.ReLU(True),
             nn.Linear(256, 10 * 20),
-            nn.Sigmoid())
+            nn.Sigmoid(),
+        )
 
     def forward(self, x):
         x = self.encoder(x)
         x = self.decoder(x)
         return x
-
-
