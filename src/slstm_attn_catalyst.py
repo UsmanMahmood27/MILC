@@ -1,12 +1,13 @@
 import os
 import random
 
-from catalyst import dl
-from catalyst.dl.callbacks import (
+from catalyst import dl,metrics
+from catalyst.dl import (
     AccuracyCallback,
     AUCCallback,
     EarlyStoppingCallback,
-    F1ScoreCallback,
+    PrecisionRecallF1SupportCallback,
+    CheckpointCallback
 )
 import numpy as np
 from sklearn.metrics import roc_auc_score
@@ -29,6 +30,14 @@ from .utils import (
 
 
 class CustomRunner(dl.Runner):
+    def on_loader_start(self, runner):
+        super().on_loader_start(runner)
+        self.meters = {
+            key: metrics.AdditiveMetric(compute_on_call=False)
+            for key in ["loss"]
+        }
+
+
     def predict_batch(self, batch):
         #    # model inference step
         epoch_loss, accuracy, steps, epoch_acc, epoch_roc = (
@@ -62,7 +71,7 @@ class CustomRunner(dl.Runner):
 
         return epoch_accuracy, epoch_roc, epoch_loss
 
-    def _handle_batch(self, batch):
+    def handle_batch(self, batch):
 
         sx, targets = batch
         targets = targets.long()
@@ -78,20 +87,29 @@ class CustomRunner(dl.Runner):
 
         loss = loss.mean()
 
-        self.output = {"logits": logits}
+        # self.output = {"logits": logits}
         y_onehot = torch.FloatTensor(sx.shape[0], 2)
         y_onehot.zero_()
         y_onehot[np.arange(sx.shape[0]), targets] = 1
-        self.input = {
+        self.batch = {
             "features": sx,
             "targets": targets,
             "targets_one_hot": y_onehot,
+            "logits": logits,
+            "loss": loss
         }
         self.batch_metrics.update({"loss": loss})
+        for key in ["loss"]:
+            self.meters[key].update(self.batch_metrics[key].item(), self.batch_size)
         if self.is_train_loader:
             loss.backward()
             self.optimizer.step()
             self.optimizer.zero_grad()
+
+    def on_loader_end(self, runner):
+        for key in ["loss"]:
+            self.loader_metrics[key] = self.meters[key].compute()[0]
+        super().on_loader_end(runner)
 
     def acc_and_auc(self, logits, mode, targets):
 
@@ -109,26 +127,26 @@ class CustomRunner(dl.Runner):
 
         return accuracy, roc
 
-    def get_attention(self, outputs):
-        weights_list = []
-        for X in outputs:
-            result = [torch.cat((X[i], X[-1]), 0) for i in range(X.shape[0])]
-            result = torch.stack(result)
-            result_tensor = self.model["attn"](result)
-            weights_list.append(result_tensor)
-
-        weights = torch.stack(weights_list)
-
-        weights = weights.squeeze()
-
-        normalized_weights = F.softmax(weights, dim=1)
-
-        attn_applied = torch.bmm(normalized_weights.unsqueeze(1), outputs)
-
-        attn_applied = attn_applied.squeeze()
-        logits = self.model["decoder"](attn_applied)
-        # print("attention decoder ", time.time() - t)
-        return logits
+    # def get_attention(self, outputs):
+    #     weights_list = []
+    #     for X in outputs:
+    #         result = [torch.cat((X[i], X[-1]), 0) for i in range(X.shape[0])]
+    #         result = torch.stack(result)
+    #         result_tensor = self.model["attn"](result)
+    #         weights_list.append(result_tensor)
+    #
+    #     weights = torch.stack(weights_list)
+    #
+    #     weights = weights.squeeze()
+    #
+    #     normalized_weights = F.softmax(weights, dim=1)
+    #
+    #     attn_applied = torch.bmm(normalized_weights.unsqueeze(1), outputs)
+    #
+    #     attn_applied = attn_applied.squeeze()
+    #     logits = self.model["decoder"](attn_applied)
+    #     # print("attention decoder ", time.time() - t)
+    #     return logits
 
     def add_regularization(self, loss):
         # print('in regularization')
@@ -245,13 +263,31 @@ class LSTMTrainer(Trainer):
         return {"train": tdataset, "valid": vdataset}
 
     def train(self):
-
+        # model = {"model": self.model}
+        # criterion = {"criterion": nn.CrossEntropyLoss()}
+        # optimizer = {"optimizer": self.optimizer}
         callbacks = [
+            # dl.CriterionCallback(
+            #     input_key="logits",
+            #     target_key="targets",
+            #     metric_key="loss",
+            #     criterion_key="criterion",
+            # ),
+            # dl.OptimizerCallback(
+            #     model_key="model",
+            #     optimizer_key="optimizer",
+            #     metric_key="loss"
+            # ),
             EarlyStoppingCallback(
-                patience=15, metric="loss", minimize=True, min_delta=0
+                patience=15, metric_key="loss", loader_key="valid", minimize=True, min_delta=0
             ),
-            AccuracyCallback(num_classes=2),
-            AUCCallback(num_classes=2, input_key="targets_one_hot"),
+            AccuracyCallback(num_classes=2,input_key="logits", target_key="targets"),
+            AUCCallback(input_key="logits", target_key="targets"),
+        #     CheckpointCallback(
+        #     "./logs", loader_key="valid", metric_key="loss", minimize=True, save_n_best=3,
+        #     # load_on_stage_start={"model": "best"},
+        #     load_on_stage_end={"model": "best"}
+        # ),
         ]
 
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
@@ -260,22 +296,24 @@ class LSTMTrainer(Trainer):
         train_dataset = TensorDataset(self.tr_eps, self.tr_labels)
         val_dataset = TensorDataset(self.val_eps, self.val_labels)
         test_dataset = TensorDataset(self.tst_eps, self.test_labels)
-        runner = CustomRunner()
+        runner = CustomRunner("./logs")
         v_bs = self.val_eps.shape[0]
         t_bs = self.tst_eps.shape[0]
         loaders = {
             "train": DataLoader(
                 train_dataset,
                 batch_size=self.batch_size,
-                num_workers=1,
+                num_workers=0,
                 shuffle=True,
             ),
             "valid": DataLoader(
-                val_dataset, batch_size=v_bs, num_workers=1, shuffle=True
+                val_dataset, batch_size=v_bs, num_workers=0, shuffle=True,
             ),
         }
 
-        model = self.model
+
+
+
         if self.complete_arc == True:
             if self.PT in ["milc", "two-loss-milc"]:
                 if self.exp in ["UFPT", "FPT"]:
@@ -308,17 +346,19 @@ class LSTMTrainer(Trainer):
         #          },
 
         runner.train(
-            model=model,
+            model=self.model,
             optimizer=self.optimizer,
+            # criterion=criterion,
             scheduler=scheduler,
             loaders=loaders,
+            valid_loader='valid',
             callbacks=callbacks,
             logdir="./logs",
             num_epochs=self.epochs,
             verbose=True,
-            distributed=False,
             load_best_on_end=True,
-            main_metric="loss",
+            valid_metric="loss",
+            minimize_valid_metric=True,
         )
 
         loader = (

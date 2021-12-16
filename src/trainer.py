@@ -10,7 +10,7 @@ class Trainer:
     def generate_batch(self, episodes):
         raise NotImplementedError
 
-    def train(self, episodes):
+    def train(self):
         raise NotImplementedError
 
     def log_results(self, epoch_idx, epoch_loss, accuracy):
