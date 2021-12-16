@@ -30,6 +30,7 @@ def train_encoder(args):
 
     # ID = args.script_ID + 3
     ID = args.script_ID - 1
+
     JobID = args.job_ID
     print("ID = " + str(ID))
     print("exp = " + args.exp)
@@ -55,7 +56,7 @@ def train_encoder(args):
     output_path = os.path.join(os.getcwd(), "Output")
     output_path = os.path.join(output_path, tfilename)
 
-    ntrials = 1
+    ntrials = 10
     ngtrials = 10
     tr_sub = [15, 25, 40]
     sub_per_class = tr_sub[ID]
